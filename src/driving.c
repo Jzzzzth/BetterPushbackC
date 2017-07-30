@@ -27,7 +27,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include <acfutils/avl.h>
 #include <acfutils/helpers.h>
 #include <acfutils/math.h>
 
@@ -704,7 +703,7 @@ seg_local2world(seg_t *seg)
 	XPLMDestroyProbe(probe);
 }
 
-static void
+void
 route_free(route_t *r)
 {
 	seg_t *seg;
@@ -714,7 +713,7 @@ route_free(route_t *r)
 	free(r);
 }
 
-static void
+void
 route_seg_append(avl_tree_t *route_table, route_t *r, const seg_t *seg)
 {
 	seg_t *seg2 = calloc(1, sizeof (*seg2));
@@ -739,7 +738,7 @@ route_seg_append(avl_tree_t *route_table, route_t *r, const seg_t *seg)
 	list_insert_tail(&r->segs, seg2);
 }
 
-static route_t *
+route_t *
 route_alloc(avl_tree_t *route_table, const list_t *segs)
 {
 	route_t *r = calloc(1, sizeof (*r));
@@ -792,8 +791,7 @@ routes_load(void)
 	route_t *r = NULL;
 	avl_tree_t *t = calloc(1, sizeof (*t));
 
-	avl_create(t, route_table_compar, sizeof (route_t),
-	    offsetof(route_t, node));
+	route_table_create(t);
 
 	if (fp == NULL)
 		goto out;
@@ -887,29 +885,42 @@ out:
 	return (t);
 }
 
+static bool_t
+routes_store(avl_tree_t *t)
+{
+	char *filename = mkpathname(ROUTE_TABLE_DIRS, ROUTE_TABLE_FILENAME,
+	    NULL);
+	bool_t res = route_table_store(t, filename);
+	free(filename);
+	return (res);
+}
+
 /*
  * Saves a driving segment table to the standard database location at
  * Output/caches/BetterPushback_segs_table.dat, creating the intermediate
  * directories as necessary.
  */
-static bool_t
-routes_store(avl_tree_t *t)
+bool_t
+route_table_store(avl_tree_t *t, const char *filename)
 {
-	char *dirname = mkpathname(ROUTE_TABLE_DIRS, NULL);
-	char *filename;
-	bool_t isdir;
+	char *dirname = strdup(filename);
+	char *sep;
 	FILE *fp;
 
-	if (!file_exists(dirname, &isdir) || !isdir) {
-		if (!create_directory(dirname))
+	sep = strrchr(dirname, DIRSEP);
+	if (sep != NULL) {
+		*sep = 0;
+		if (!file_exists(dirname, NULL) &&
+		    !create_directory_recursive(dirname)) {
+			free(dirname);
 			return (B_FALSE);
+		}
 	}
 	free(dirname);
-	filename = mkpathname(ROUTE_TABLE_DIRS, ROUTE_TABLE_FILENAME, NULL);
+
 	fp = fopen(filename, "w");
 	if (fp == NULL) {
 		logMsg("Error writing file %s: %s", filename, strerror(errno));
-		free(filename);
 		return (B_FALSE);
 	}
 
@@ -937,7 +948,6 @@ routes_store(avl_tree_t *t)
 		}
 	}
 
-	free(filename);
 	fclose(fp);
 
 	return (B_TRUE);
@@ -946,12 +956,7 @@ routes_store(avl_tree_t *t)
 static void
 routes_free(avl_tree_t *t)
 {
-	route_t *r;
-	void *cookie = NULL;
-
-	while ((r = avl_destroy_nodes(t, &cookie)) != NULL)
-		route_free(r);
-	avl_destroy(t);
+	route_table_destroy(t);
 	free(t);
 }
 
@@ -1007,4 +1012,22 @@ route_load(geo_pos2_t start_pos, double start_hdg, list_t *segs)
 	}
 
 	routes_free(t);
+}
+
+void
+route_table_create(avl_tree_t *route_table)
+{
+	avl_create(route_table, route_table_compar, sizeof (route_t),
+	    offsetof(route_t, node));
+}
+
+void
+route_table_destroy(avl_tree_t *route_table)
+{
+	route_t *r;
+	void *cookie = NULL;
+
+	while ((r = avl_destroy_nodes(route_table, &cookie)) != NULL)
+		route_free(r);
+	avl_destroy(route_table);
 }

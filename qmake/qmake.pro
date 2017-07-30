@@ -69,6 +69,8 @@ win32:contains(CROSS_COMPILE, x86_64-w64-mingw32-) {
 	    pkg-config --cflags libpcre2-8")
 	QMAKE_CFLAGS += $$system("$$[LIBACFUTILS]/pkg-config-deps win-64 \
 	    --cflags")
+	QMAKE_CFLAGS += $$system("PKG_CONFIG_PATH=../libxml2/libxml2-win-64 \
+	    pkg-config --cflags libxml-2.0")
 
 	# This must go first for GCC to properly find dependent symbols
 	LIBS += -L$$[LIBACFUTILS]/qmake/win64 -lacfutils
@@ -86,6 +88,8 @@ win32:contains(CROSS_COMPILE, x86_64-w64-mingw32-) {
 	LIBS += $$system("PKG_CONFIG_PATH=../pcre2/pcre2-win-64 pkg-config \
 	    --libs libpcre2-8")
 
+	LIBS += "../libxml2/libxml2-win-64/.libs/libxml2.a"
+
 	LIBS += -ldbghelp
 }
 
@@ -96,6 +100,8 @@ win32:contains(CROSS_COMPILE, i686-w64-mingw32-) {
 	    pkg-config --cflags libpcre2-8")
 	QMAKE_CFLAGS += $$system("$$[LIBACFUTILS]/pkg-config-deps win-32 \
 	    --cflags")
+	QMAKE_CFLAGS += $$system("PKG_CONFIG_PATH=../libxml2/libxml2-win-32 \
+	    pkg-config --cflags libxml-2.0")
 
 	LIBS += -L$$[LIBACFUTILS]/qmake/win32 -lacfutils
 	LIBS += $$system("$$[LIBACFUTILS]/pkg-config-deps win-32 --libs")
@@ -111,6 +117,8 @@ win32:contains(CROSS_COMPILE, i686-w64-mingw32-) {
 	    --libs zlib")
 	LIBS += $$system("PKG_CONFIG_PATH=../pcre2/pcre2-win-32 pkg-config \
 	    --libs libpcre2-8")
+
+	LIBS += "../libxml2/libxml2-win-32/.libs/libxml2.a"
 
 	LIBS += -ldbghelp
 }
@@ -129,6 +137,8 @@ linux-g++-64 {
 	    pkg-config --cflags libpcre2-8")
 	QMAKE_CFLAGS += $$system("$$[LIBACFUTILS]/pkg-config-deps linux-64 \
 	    --cflags")
+	QMAKE_CFLAGS += $$system("PKG_CONFIG_PATH=../libxml2/libxml2-linux-64 \
+	    pkg-config --cflags libxml-2.0")
 
 	LIBS += -L$$[LIBACFUTILS]/qmake/lin64 -lacfutils
 	LIBS += $$system("$$[LIBACFUTILS]/pkg-config-deps linux-64 --libs")
@@ -139,6 +149,9 @@ linux-g++-64 {
 	    --libs zlib")
 	LIBS += $$system("PKG_CONFIG_PATH=../pcre2/pcre2-linux-64 pkg-config \
 	    --libs libpcre2-8")
+	LIBS += "../libxml2/libxml2-linux-64/.libs/libxml2.a"
+	LIBS += $$system("PKG_CONFIG_PATH=../libxml2/libxml2-linux-64 \
+	    pkg-config --libs libxml-2.0")
 }
 
 linux-g++-32 {
@@ -148,6 +161,8 @@ linux-g++-32 {
 	    pkg-config --cflags libpcre2-8")
 	QMAKE_CFLAGS += $$system("$$[LIBACFUTILS]/pkg-config-deps linux-32 \
 	    --cflags")
+	QMAKE_CFLAGS += $$system("PKG_CONFIG_PATH=../libxml2/libxml2-linux-32 \
+	    pkg-config --cflags libxml-2.0")
 
 	# The stack protector forces us to depend on libc,
 	# but we'd prefer to be static.
@@ -163,6 +178,8 @@ linux-g++-32 {
 	    --libs zlib")
 	LIBS += $$system("PKG_CONFIG_PATH=../pcre2/pcre2-linux-32 pkg-config \
 	    --libs libpcre2-8")
+
+	LIBS += "../libxml2/libxml2-linux-32/.libs/libxml2.a"
 
 	LIBS += -lssp_nonshared
 }
@@ -188,6 +205,8 @@ macx-clang {
 	    pkg-config --cflags libpcre2-8")
 	QMAKE_CFLAGS += $$system("$$[LIBACFUTILS]/pkg-config-deps mac-64 \
 	    --cflags")
+	QMAKE_CFLAGS += $$system("PKG_CONFIG_PATH=../libxml2/libxml2-mac-64 \
+	    pkg-config --cflags libxml-2.0")
 
 	LIBS += -L$$[LIBACFUTILS]/qmake/mac64 -lacfutils
 	LIBS += $$system("$$[LIBACFUTILS]/pkg-config-deps mac-64 --libs")
@@ -199,6 +218,7 @@ macx-clang {
 	LIBS += $$system("PKG_CONFIG_PATH=../pcre2/pcre2-mac-64 pkg-config \
 	    --libs libpcre2-8")
 
+	LIBS += "../libxml2/libxml2-mac-64/.libs/libxml2.a"
 }
 
 macx-clang-32 {
@@ -208,6 +228,8 @@ macx-clang-32 {
 	    pkg-config --cflags libpcre2-8")
 	QMAKE_CFLAGS += $$system("$$[LIBACFUTILS]/pkg-config-deps mac-32 \
 	    --cflags")
+	QMAKE_CFLAGS += $$system("PKG_CONFIG_PATH=../libxml2/libxml2-mac-32 \
+	    pkg-config --cflags libxml-2.0")
 
 	LIBS += -L$$[LIBACFUTILS]/qmake/mac32 -lacfutils
 	LIBS += $$system("$$[LIBACFUTILS]/pkg-config-deps mac-32 --libs")
@@ -219,6 +241,7 @@ macx-clang-32 {
 	LIBS += $$system("PKG_CONFIG_PATH=../pcre2/pcre2-mac-32 pkg-config \
 	    --libs libpcre2-8")
 
+	LIBS += "../libxml2/libxml2-mac-32/.libs/libxml2.a"
 }
 
 HEADERS += ../src/*.h
