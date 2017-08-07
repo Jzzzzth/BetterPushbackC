@@ -128,6 +128,7 @@ unix:!macx {
 	TARGET = lin.xpl
 	LIBS += -nodefaultlibs
 	LIBS += -Wl,--exclude-libs,ALL
+	LIBS += -lc_nonshared
 }
 
 linux-g++-64 {

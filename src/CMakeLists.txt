@@ -131,6 +131,7 @@ else()
 	FIND_LIBRARY(OPUS_LIBRARY opus)
 	FIND_LIBRARY(OGG_LIBRARY ogg)
 	FIND_LIBRARY(LIBXML2_LIBRARY xml2)
+	FIND_LIBRARY(LIBC_NONSHARED c_nonshared)
 	target_link_libraries(bp
 	    ${LIBACFUTILS_LIBRARY}
 	    ${LIBPNG_LIBRARY}
@@ -140,6 +141,7 @@ else()
 	    ${OPUS_LIBRARY}
 	    ${OGG_LIBRARY}
 	    ${LIBXML2_LIBRARY}
+	    ${LIBC_NONSHARED}
 	    )
 endif()
 

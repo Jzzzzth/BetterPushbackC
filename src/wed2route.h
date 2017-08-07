@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+void xlate_wedroutes(void);
+
 #ifdef	__cplusplus
 }
 #endif

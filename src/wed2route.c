@@ -18,6 +18,11 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <errno.h>
+
+#if	!IBM
+#include <sys/stat.h>
+#endif
 
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
@@ -27,17 +32,18 @@
 
 #include "driving.h"
 #include "wed2route.h"
+#include "xplane.h"
 
 #define	MIN_NODE_DIST	3	/* meters */
 
 typedef struct {
-	uint64_t	id;
+	unsigned long	id;
 	const xmlNode	*xml_node;
 	avl_node_t	avl_node;
 } objmap_t;
 
 /* The virtual vehicle spec we use for computing path segments. */
-const static vehicle_t veh = {
+static const vehicle_t veh = {
 	.wheelbase = 1, .fixed_z_off = -0.5, .max_steer = 60,
 };
 
@@ -162,7 +168,7 @@ cons_route(const xmlNode *node, const avl_tree_t *objmap, avl_tree_t *route_tbl)
 		} \
 	} while (0)
 
-		READ_PROP(&srch.id, "%llu", node, "id");
+		READ_PROP(&srch.id, "%lu", node, "id");
 		vertex = avl_find(objmap, &srch, NULL);
 		if (vertex == NULL)
 			goto out;
@@ -259,7 +265,7 @@ out:
 	return (route);
 }
 
-bool_t
+static bool_t
 wed2dat(const char *earthwedxml, const char *route_table_filename)
 {
 	avl_tree_t *objmap = NULL;
@@ -291,7 +297,7 @@ wed2dat(const char *earthwedxml, const char *route_table_filename)
 		xmlChar *prop = xmlGetProp(node, (xmlChar *)"id");
 
 		e->xml_node = node;
-		if (prop == NULL || sscanf((char *)prop, "%llu", &e->id) != 1 ||
+		if (prop == NULL || sscanf((char *)prop, "%lu", &e->id) != 1 ||
 		    avl_find(objmap, e, NULL) != NULL) {
 			if (prop != NULL)
 				xmlFree(prop);
@@ -352,4 +358,46 @@ errout:
 	route_table_destroy(&route_table);
 
 	return (B_FALSE);
+}
+
+void
+xlate_wedroutes(void)
+{
+	char *path = mkpathname(bp_xpdir, "Custom Scenery", NULL);
+	DIR *d = opendir(path);
+	struct dirent *de;
+
+	if (d == NULL) {
+		logMsg("Error opening %s: %s", path, strerror(errno));
+		free(path);
+		return;
+	}
+	free(path);
+
+	while ((de = readdir(d)) != NULL) {
+		char *earthwed = mkpathname(bp_xpdir, "Custom Scenery",
+		    de->d_name, "earth.wed.xml", NULL);
+		char *routefile = mkpathname(bp_xpdir, "Custom Scenery",
+		    de->d_name, "BetterPushback_routes.dat", NULL);
+		struct stat earthwed_st, routefile_st;
+
+		if (!file_exists(earthwed, NULL) ||
+		    !file_exists(routefile, NULL))
+			goto done;
+		if (stat(earthwed, &earthwed_st) < 0 ||
+		    stat(routefile, &routefile_st) < 0) {
+			logMsg("Cannot stat %s or %s: %s", earthwed,
+			    routefile, strerror(errno));
+		}
+		if (earthwed_st.st_mtime > routefile_st.st_mtime &&
+		    !wed2dat(earthwed, routefile)) {
+			logMsg("WED2DAT: Error translating %s to %s",
+			    earthwed, routefile);
+		}
+done:
+		free(earthwed);
+		free(routefile);
+	}
+
+	closedir(d);
 }

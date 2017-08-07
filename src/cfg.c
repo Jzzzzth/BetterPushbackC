@@ -45,6 +45,7 @@ static XPWidgetID main_win = NULL;
 #define	BUTTON_HEIGHT		22
 #define	BUTTON_WIDTH		200
 #define	CHECKBOX_SIZE		20
+#define	MIN_BOX_HEIGHT		45
 
 #define	MAIN_WINDOW_HEIGHT	(MARGIN + 10 * BUTTON_HEIGHT + MARGIN)
 
@@ -62,6 +63,8 @@ static struct {
 	XPWidgetID	lang_pref_native;
 	XPWidgetID	lang_pref_match_english;
 
+	XPWidgetID	dev_menu;
+
 	XPWidgetID	save_cfg;
 } buttons;
 
@@ -77,13 +80,15 @@ const char *native_tooltip = "Ground crew speaks my language irrespective "
     "of what country the airport is in.";
 const char *match_english_tooltip = "Ground crew always speaks English "
     "with a local accent.";
+const char *dev_menu_tooltip = "Show the developer menu options.";
 const char *save_prefs_tooltip = "Save current preferences to disk.";
 
 static void
-lang_buttons_update(void)
+buttons_update(void)
 {
 	const char *lang = "XX";
 	lang_pref_t lang_pref;
+	bool_t show_dev = B_FALSE;
 
 	(void) conf_get_str(bp_conf, "lang", &lang);
 #define	SET_LANG_BTN(btn, l) \
@@ -107,6 +112,8 @@ lang_buttons_update(void)
 	    xpProperty_ButtonState, lang_pref == LANG_PREF_NATIVE);
 	XPSetWidgetProperty(buttons.lang_pref_match_english,
 	    xpProperty_ButtonState, lang_pref == LANG_PREF_MATCH_ENGLISH);
+	conf_get_b(bp_conf, "show_dev_menu", &show_dev);
+	XPSetWidgetProperty(buttons.dev_menu, xpProperty_ButtonState, show_dev);
 }
 
 static int
@@ -150,8 +157,12 @@ main_window_cb(XPWidgetMessage msg, XPWidgetID widget, intptr_t param1,
 		} else if (btn == buttons.lang_pref_match_english) {
 			conf_set_i(bp_conf, "lang_pref",
 			    LANG_PREF_MATCH_ENGLISH);
+		} else if (btn == buttons.dev_menu) {
+			bool_t show_dev = B_FALSE;
+			conf_get_b(bp_conf, "show_dev_menu", &show_dev);
+			conf_set_b(bp_conf, "show_dev_menu", !show_dev);
 		}
-		lang_buttons_update();
+		buttons_update();
 	}
 
 	return (0);
@@ -188,8 +199,8 @@ layout_checkboxes(checkbox_t *checkboxes, int x, int y, tooltip_set_t *tts)
 	    checkboxes[0].string, 0, main_win, xpWidgetClass_Caption);
 	y += BUTTON_HEIGHT;
 
-	(void) create_widget_rel(x, y, B_FALSE, width + 6,
-	    (n - 1) * BUTTON_HEIGHT, 1, "", 0, main_win,
+	(void) create_widget_rel(x, y, B_FALSE, width + 7,
+	    MAX((n - 1) * BUTTON_HEIGHT, MIN_BOX_HEIGHT), 1, "", 0, main_win,
 	    xpWidgetClass_SubWindow);
 
 	for (int i = 1; i < n; i++) {
@@ -250,6 +261,11 @@ create_main_window(void)
 	    },
 	    { NULL, NULL, NULL }
 	};
+	checkbox_t dev_col[] = {
+	    { _("Developer options"), NULL, NULL },
+	    { _("Show developer menu"), &buttons.dev_menu, dev_menu_tooltip },
+	    { NULL, NULL, NULL }
+	};
 
 	col1_width = measure_checkboxes_width(col1);
 	col2_width = measure_checkboxes_width(col2);
@@ -265,6 +281,8 @@ create_main_window(void)
 
 	layout_checkboxes(col1, MARGIN, MARGIN, tts);
 	layout_checkboxes(col2, MARGIN + col1_width + MARGIN, MARGIN, tts);
+	layout_checkboxes(dev_col, MARGIN + col1_width + MARGIN,
+	    MARGIN + 5 * BUTTON_HEIGHT, tts);
 
 #define LAYOUT_PUSH_BUTTON(var, x, y, w, h, label, tooltip) \
 	do { \
@@ -374,7 +392,7 @@ gui_init(void)
 {
 	tooltip_init();
 	create_main_window();
-	lang_buttons_update();
+	buttons_update();
 }
 
 void

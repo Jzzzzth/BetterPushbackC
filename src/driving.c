@@ -69,23 +69,6 @@
 /* Turns on aggressive debug logging. */
 /*#define	DRIVING_DEBUG_LOGGING*/
 
-/*
- * A route table is an AVL tree that holds sets of driving segments, each
- * associated with a particular starting position (first start_pos & start_hdg
- * or the first segment). This allows us to store and retrieve previously used
- * driving instructions so the user doesn't have to keep re-entering them if
- * they repeatedly push back from the same starting positions.
- * This table is stored in Output/caches/BetterPushback_routes.dat as
- * a text file. See routes_store for details on the format.
- */
-typedef struct {
-	geo_pos2_t	pos;		/* start geographical position */
-	vect3_t		pos_ecef;	/* start position in ECEF */
-	double		hdg;		/* start true heading in degrees */
-	list_t		segs;
-	avl_node_t	node;
-} route_t;
-
 static int compute_segs_impl(const vehicle_t *veh, vect2_t start_pos,
     double start_hdg, vect2_t end_pos, double end_hdg, list_t *segs,
     bool_t recurse);
